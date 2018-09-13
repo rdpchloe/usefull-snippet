@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			/* Set the size of the div element that contains the map */
+			#map
+			{
+				height: 400px;  /* The height is 400 pixels */
+				width: 100%;  /* The width is the width of the web page */
+			}
+		</style>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js">
+		</script>
+
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDokMaZ9tqIXxCngbk9OIYQRq5Ih9-D3l4">
+		</script>
+	</head>
+	<body>
+		<h3>
+			My Google Maps Demo
+		</h3>
+		<!--The div element for the map -->
+		<div id="map">
+		</div>
+		Lat: <input type="text" class="form-control tfMapLat" onblur="UpdateMap()" maxlength="20">
+		Long: <input type="text" class="form-control tfMapLong" onblur="UpdateMap()" maxlength="20">
+		<br><br>
+		Lengkapnya: <textarea class="txtAddress"></textarea>
+		<br><br>
+		Kelurahan: <input type="text" class="tfKelurahan" />
+		Kecamatan: <input type="text" class="tfKecamatan" />
+		<script>
+			var locationResult;
+			var geoLocationResult;
+			
+			$(document).ready(function()
+				{
+					UpdateMap();
+				});
+
+			function initMap(strLat, strLong)
+			{
+				if (strLat == "" || strLat == null || strLong == "" || strLong == null)
+				{
+					//initialize location if lat long null
+					strLat = -6.1143035;
+					strLong = 106.1537203;
+				}
+				var uluru =
+				{
+					lat: parseFloat(strLat), lng: parseFloat(strLong)
+				};
+				var map = new google.maps.Map(document.getElementById('map'),
+					{
+						zoom: 15,
+						center: uluru
+					});
+				var geocoder = new google.maps.Geocoder();
+				var marker = new google.maps.Marker(
+					{
+						position: uluru,
+						map: map
+					});
+				google.maps.event.addListener(map, 'click', function(event)
+					{
+						placeMarker(event.latLng);
+						geocoder.geocode(
+							{
+								'latLng': event.latLng
+							}, function(results, status)
+							{
+								geoLocationResult = results;
+								if (status == google.maps.GeocoderStatus.OK)
+								{
+									if (results[0])
+									{
+										$(".txtAddress").text(results[0].formatted_address);
+										locationResult = GetVillageAndDistrict(results);
+										$(".tfKelurahan").val(locationResult["kelurahan"]);
+										$(".tfKecamatan").val(locationResult["kecamatan"]);
+									}
+								}
+							});
+					});
+					
+				function GetVillageAndDistrict(geocoderResult)
+				{
+					var returnResult = {};
+					for (var j = 0; j < geocoderResult[0].address_components.length; j++)
+					{
+						if (geocoderResult[0].address_components[j].types[0] == "administrative_area_level_4")
+							returnResult["kelurahan"] = geocoderResult[0].address_components[j].long_name;
+							
+						if (geocoderResult[0].address_components[j].types[0] == "administrative_area_level_3")
+							returnResult["kecamatan"] = geocoderResult[0].address_components[j].long_name;
+					}
+					
+					return returnResult;
+				}
+
+				function placeMarker(location)
+				{
+					if (marker == undefined)
+					{
+						marker = new google.maps.Marker(
+							{
+								position: location,
+								map: map,
+								animation: google.maps.Animation.DROP,
+							});
+					}
+					else
+					{
+						marker.setPosition(location);
+					}
+					$(".tfMapLat").val(location.lat());
+					$(".tfMapLong").val(location.lng());
+				}
+			}
+
+			function UpdateMap()
+			{
+				var tfLat = $(".tfMapLat").val();
+				var tfLong = $(".tfMapLong").val();
+				initMap(tfLat, tfLong);
+			}
+		</script>
+	</body>
+</html>
